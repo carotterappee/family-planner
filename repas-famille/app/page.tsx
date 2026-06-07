@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const membres = ["Florence", "Alexandre", "Nicolas", "Caroline", "Seyun"];
+
 const nomsJours = [
   "Dimanche",
   "Lundi",
@@ -28,6 +29,7 @@ const jours = Array.from({ length: 7 }, (_, i) => {
     id: date.toISOString().split("T")[0],
   };
 });
+
 const repas = ["Midi", "Soir"];
 
 export default function Home() {
@@ -38,6 +40,19 @@ export default function Home() {
   const [repasOuvert, setRepasOuvert] = useState("");
   const [menus, setMenus] = useState<Record<string, string>>({});
   const [presences, setPresences] = useState<Record<string, Record<string, string>>>({});
+
+  useEffect(() => {
+    const menusSauvegardes = localStorage.getItem("menus");
+    const presencesSauvegardees = localStorage.getItem("presences");
+
+    if (menusSauvegardes) {
+      setMenus(JSON.parse(menusSauvegardes));
+    }
+
+    if (presencesSauvegardees) {
+      setPresences(JSON.parse(presencesSauvegardees));
+    }
+  }, []);
 
   function choisirMembre(nom: string) {
     setMembre(nom);
@@ -70,20 +85,30 @@ export default function Home() {
   }
 
   function definirPresence(repasId: string, statut: "mange" | "ne mange pas") {
-    setPresences((ancien) => ({
-      ...ancien,
-      [repasId]: {
-        ...ancien[repasId],
-        [utilisateurConnecte]: statut,
-      },
-    }));
+    setPresences((ancien) => {
+      const nouveau = {
+        ...ancien,
+        [repasId]: {
+          ...ancien[repasId],
+          [utilisateurConnecte]: statut,
+        },
+      };
+
+      localStorage.setItem("presences", JSON.stringify(nouveau));
+      return nouveau;
+    });
   }
 
   function modifierMenu(repasId: string, texte: string) {
-    setMenus((ancien) => ({
-      ...ancien,
-      [repasId]: texte,
-    }));
+    setMenus((ancien) => {
+      const nouveau = {
+        ...ancien,
+        [repasId]: texte,
+      };
+
+      localStorage.setItem("menus", JSON.stringify(nouveau));
+      return nouveau;
+    });
   }
 
   if (utilisateurConnecte) {
@@ -93,20 +118,21 @@ export default function Home() {
           <div className="mb-6 rounded-3xl bg-white p-6 shadow-lg">
             <div className="mb-3 text-5xl">🍽️</div>
             <h1 className="text-3xl font-bold">
-              Bienvenue {utilisateurConnecte} 
+              Bienvenue {utilisateurConnecte}
             </h1>
           </div>
 
           <div className="grid gap-4 md:grid-cols-7">
             {jours.map((jour) => (
               <div key={jour.id} className="rounded-3xl bg-white p-4 shadow-md">
-<h2 className="text-center text-lg font-bold">
-  {jour.nom}
-</h2>
+                <h2 className="text-center text-lg font-bold">
+                  {jour.nom}
+                </h2>
 
-<p className="mb-4 text-center text-sm text-[#6f5b48]">
-  {jour.date}
-</p>
+                <p className="mb-4 text-center text-sm text-[#6f5b48]">
+                  {jour.date}
+                </p>
+
                 <div className="space-y-3">
                   {repas.map((moment) => {
                     const repasId = `${jour.id}-${moment}`;
@@ -146,14 +172,16 @@ export default function Home() {
                             <div className="mb-3 grid grid-cols-2 gap-2">
                               <button
                                 onClick={() => definirPresence(repasId, "mange")}
-                                className="rounded-xl bg-green-100 px-3 py-2 text-sm font-semibold"
+                                title="Je mange"
+                                className="rounded-xl bg-green-100 px-4 py-3 text-lg font-bold"
                               >
                                 M
                               </button>
 
                               <button
                                 onClick={() => definirPresence(repasId, "ne mange pas")}
-                                className="rounded-xl bg-red-100 px-3 py-2 text-sm font-semibold"
+                                title="Je ne mange pas"
+                                className="rounded-xl bg-red-100 px-4 py-3 text-lg font-bold"
                               >
                                 MP
                               </button>
